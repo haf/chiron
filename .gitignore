@@ -179,3 +179,5 @@ UpgradeLog*.htm
 # Microsoft Fakes
 FakesAssemblies/
 *.userprefs
+AssemblyVersionInfo.fs
+paket.exe
