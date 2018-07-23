@@ -24,7 +24,10 @@ type CoreConfig() =
 let thisAssembly = typeof<Dummy>.GetTypeInfo().Assembly
 
 let loadJsonResource name =
-        thisAssembly.GetManifestResourceStream(name + ".json")
+    let path = "Chiron.Benchmarks." + name + ".json"
+    let res = thisAssembly.GetManifestResourceStream path
+    if isNull res then failwithf "Failed to load '%s'." path
+    res
 
 let loadJsonResourceAsString name =
     use stream = loadJsonResource name

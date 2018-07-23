@@ -3,6 +3,7 @@ namespace ChironB.Benchmarks
 open Chiron
 open BenchmarkDotNet.Attributes
 open Newtonsoft.Json
+open Newtonsoft.Json.Linq
 
 module Bench =
     open System.IO
@@ -12,7 +13,7 @@ module Bench =
         stream.Seek(0L, SeekOrigin.Begin) |> ignore
 
     module Chiron =
-        let inline parse (stream : #Stream) : Json =
+        let inline parse (stream: #Stream): Json =
             let reader = new StreamReader(stream)
             reader.ReadToEnd()
             |> Json.parse
@@ -25,29 +26,34 @@ module Bench =
         //     |> Json.deserialize
 
     module JsonNET =
-        open Newtonsoft.Json
-
         let serializer = JsonSerializer.CreateDefault()
 
-        let inline deserialize<'a> (stream : #Stream) : 'a =
+        let inline parse (stream: #Stream): JObject =
             let jsonReader = new StreamReader(stream, Encoding.UTF8)
             let reader = new JsonTextReader(jsonReader, CloseInput = false)
-            serializer.Deserialize<'a> reader
+            JObject.Load reader
 
 [<Config(typeof<CoreConfig>)>]
 type ParseTest () =
-    let mutable jsonString = "<null>"
+    let mutable jsonStream = null
+    let mutable jsonString = null
 
     [<Setup>]
     member this.Setup () =
         jsonString <- loadJsonResourceAsString this.Name
+        jsonStream <- loadJsonResource this.Name
 
     [<Params("error", "fparsec", "user", "prettyuser", "social")>]
     member val Name = "<null>" with get, set
 
     [<Benchmark>]
-    member __.Chiron_New () : Chiron.JsonResult<Chiron.Json> =
+    member __.Chiron_New (): Chiron.JsonResult<Chiron.Json> =
         Chiron.Parsing.Json.parse jsonString
+
+    [<Benchmark>]
+    member __.Newtonsoft () =
+        Bench.resetStream jsonStream
+        Bench.JsonNET.parse jsonStream
 
 [<Config(typeof<CoreConfig>)>]
 type FormatTest () =
